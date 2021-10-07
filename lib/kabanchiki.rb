@@ -59,22 +59,28 @@ class Kabanchiki
   end
 
   def race
-    result = []
-    3.times do |t|
-      places = [1, 2, 3].shuffle
+    places = kabanchiki.shuffle.to_h{|i| [i, 4]}
+    lap = 1
+    first_touch = false
+
+    until first_touch do
       text =  "Погнали!\n"
       kabanchiki.each do |kaban|
-        place = places.pop
-        text << (' . ' * place) << kaban
+        places[kaban] -= [1,0,1].sample if lap > 1
+        first_touch = true if (places[kaban] < 2 && !first_touch)
+        text << "|"
+        4.times do |t|
+          text << (places[kaban] === t + 1 ? kaban : ' . ')
+        end
         text << "\n"
-        result[place - 1] = kaban
       end
-      text << (" . " * (t + 1)) << "\n"
+      text << (" . " * lap) << "\n"
       bot.api.edit_message_text(chat_id: chat_id, message_id: message_id, text: text)
       sleep 1.5
+      lap += 1
     end
 
-    award result.first
+    award places.sort_by{|k, v| v}.first.first
   end
 
   def award(winner)
