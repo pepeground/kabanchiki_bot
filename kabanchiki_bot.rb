@@ -23,14 +23,14 @@ Telegram::Bot::Client.run(ENV['TOKEN']) do |bot|
 
     when Telegram::Bot::Types::Message
       case message.text
-      when '/bet@KabanchikiBot'
+      when /\/bet\@Kabanchiki/
         if Kabanchiki.games[message.chat.id]
           bot.api.send_message(chat_id: message.chat.id, text: 'Кабанчики ещё на подскоке...')
         else
           game = Kabanchiki.new(bot, message.chat.id)
           Thread.start{ game.countdown }
         end
-      when '/top@KabanchikiBot'
+      when /\/top\@Kabanchiki/
         bot.api.send_message(chat_id: message.chat.id, text: Kabanchiki.chat_top(message.chat.id))
       end
     end
