@@ -1,0 +1,4 @@
+*.log
+*.lock
+*.DS_Store
+*.pstore

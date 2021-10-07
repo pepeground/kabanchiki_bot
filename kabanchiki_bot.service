@@ -1,0 +1,16 @@
+# sudo cp kabanchiki_bot.service /lib/systemd/system -v
+# sudo systemctl enable kabanchiki_bot.service
+# sudo systemctl start kabanchiki_bot.service
+[Unit]
+Description=Kabanchiki bot
+
+[Service]
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/kabanchiki_bot
+Restart=always
+Environment="TOKEN=bot_token"
+ExecStart=/usr/bin/ruby kabanchiki_bot.rb
+
+[Install]
+WantedBy=multi-user.target
