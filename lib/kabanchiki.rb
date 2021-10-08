@@ -35,7 +35,7 @@ class Kabanchiki
   def countdown
     self.message_id = bot.api.send_message(
       chat_id: chat_id,
-      text: 'Кто подскочет первым?',
+      text: 'Кто подскочит первым?',
       reply_markup: build_buttons
     ).dig('result', 'message_id')
     3.downto(0).each do |t|
