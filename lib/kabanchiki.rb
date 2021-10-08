@@ -83,7 +83,7 @@ class Kabanchiki
       lap += 1
     end
 
-    award places.sort_by{|k, v| v}.first.first
+    award places
   end
 
   def render_places(places)
@@ -98,20 +98,24 @@ class Kabanchiki
     text
   end
 
-  def award(winner)
-    result = "Кабанчик #{winner} подскочил первым! \n\n"
+  def award(places)
+    winner = places.sort_by{|k, v| v}.first.first
+    result = render_places(places)
+    result << "\nКабанчик #{winner} подскочил первым!"
+
     right_bets = []
     bets.each do |user, bet|
       right_bets << user if bet === winner
     end
 
     unless right_bets.empty?
+      result << "\n\n"
       result << right_bets.join(', ')
       result << ' поставил(и) на правильного кабанчика!'
       update_chat_top(right_bets)
     end
 
-    bot.api.send_message(chat_id: chat_id, text: result)
+    bot.api.edit_message_text(chat_id: chat_id, message_id: message_id, text: result)
     Kabanchiki.games[chat_id] = nil
   end
 

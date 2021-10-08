@@ -10,7 +10,7 @@ Group=ubuntu
 WorkingDirectory=/home/ubuntu/kabanchiki_bot
 Restart=always
 Environment="TOKEN=bot_token"
-ExecStart=/usr/bin/ruby kabanchiki_bot.rb
+ExecStart=/home/ubuntu/.rbenv/bin/rbenv exec bundle exec ruby kabanchiki_bot.rb
 
 [Install]
 WantedBy=multi-user.target
