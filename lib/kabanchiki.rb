@@ -64,23 +64,38 @@ class Kabanchiki
     first_touch = false
 
     until first_touch do
-      text =  "Погнали!\n"
-      kabanchiki.each do |kaban|
-        places[kaban] -= [1,0,1].sample if lap > 1
-        first_touch = true if (places[kaban] < 2 && !first_touch)
-        text << "|"
-        4.times do |t|
-          text << (places[kaban] === t + 1 ? kaban : ' . ')
+      places.each do |kaban, place|
+        if lap > 1
+          if first_touch
+            places[kaban] -= [1, 1, 1, 0, 0].sample if place > 2
+          else
+            places[kaban] -= [1, 1, 1, 0, 0].sample
+          end
         end
-        text << "\n"
+        first_touch = true if (places[kaban] < 2 && !first_touch)
       end
-      text << (" . " * lap) << "\n"
-      bot.api.edit_message_text(chat_id: chat_id, message_id: message_id, text: text)
+      bot.api.edit_message_text(
+        chat_id: chat_id,
+        message_id: message_id,
+        text: render_places(places)
+      )
       sleep 1.5
       lap += 1
     end
 
     award places.sort_by{|k, v| v}.first.first
+  end
+
+  def render_places(places)
+    text =  "Погнали!\n"
+    kabanchiki.each do |kaban|
+      text << "|"
+      4.times do |t|
+        text << (places[kaban] === t + 1 ? kaban : ' . ')
+      end
+      text << "\n"
+    end
+    text
   end
 
   def award(winner)
