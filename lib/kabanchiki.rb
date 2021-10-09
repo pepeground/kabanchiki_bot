@@ -23,7 +23,7 @@ class Kabanchiki
       text = "Топ чата: \n\n"
       store.transaction(true) do
         users = (store[chat_id] || {}).sort_by{|k, v| -v[:balance]}.first(5)
-        users.each{|u| text << "#{u.first} (#{u.last[:balance]} у.е.)"} unless users.empty?
+        users.each{|u| text << "#{u.first} (#{u.last[:balance]} у.е.)\n"} unless users.empty?
       end
       text
     end
