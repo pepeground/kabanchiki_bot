@@ -6,23 +6,27 @@ class Kabanchiki
   class << self
 
     def games
-      @@chats ||= {}
+      @@games ||= {}
+    end
+
+    def last_pot
+      @@last_pot ||= {}
     end
 
     def store
-      @@store ||= PStore.new("#{__dir__}/kabanchiki_bot.pstore")
+      @@store ||= PStore.new('kabanchiki_bot.pstore')
     end
 
-    def balance(chat_id, username)
+    def user_data(chat_id, username)
       store.transaction(true) do
-        store.fetch(chat_id, {}).dig(username, :balance) || (BET_SIZE * 10)
+        store.fetch(chat_id, {}).fetch(username, {})
       end
     end
 
     def chat_top(chat_id)
-      text = "Топ чата: \n\n"
+      text = "Топ 10 чата: \n\n"
       store.transaction(true) do
-        users = (store[chat_id] || {}).sort_by{|k, v| -v[:balance]}.first(5)
+        users = (store[chat_id] || {}).sort_by{|k, v| -v[:balance]}.first(10)
         users.each{|u| text << "#{u.first} (#{u.last[:balance]} у.е.)\n"} unless users.empty?
       end
       text
@@ -164,7 +168,15 @@ class Kabanchiki
 
   def update_balance(winners)
     pot = bets.size * BET_SIZE
-    prize = winners.empty? ? 0: (pot.to_f / winners.size).round
+    pot += self.class.last_pot[chat_id].to_i
+    if winners.empty?
+      prize = 0
+      self.class.last_pot[chat_id] = pot
+    else
+      prize = (pot.to_f / winners.size).round
+      self.class.last_pot[chat_id] = nil
+    end
+
     store = self.class.store
     store.transaction do
       old_data = store[chat_id] || {}

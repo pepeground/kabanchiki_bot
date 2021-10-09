@@ -23,14 +23,17 @@ Telegram::Bot::Client.run(ENV['TOKEN'], logger: logger) do |bot|
           game = Kabanchiki.new(bot, message.chat.id)
           Thread.start{ game.countdown }
         end
-      when /\/balance\@Kabanchiki/
+      when /\/stat\@Kabanchiki/
+        user = Kabanchiki.user_data(message.chat.id, message.from.username)
         text = "У #{message.from.username} "
-        text << Kabanchiki.balance(message.chat.id, message.from.username).to_s
-        text << ' у.е.'
-        bot.api.send_message(
-          chat_id: message.chat.id,
-          text: text
-        )
+        text << "#{(user[:balance] || Kabanchiki::BET_SIZE*10)} у.е.\n"
+        text << "Ставок: #{user[:bets].to_i}  | "
+        text << "Выигрышей: #{user[:right_bets].to_i}"
+        if user[:bets].to_i > 0
+          text << "\nПроцент: #{(user[:right_bets].to_f/user[:bets].to_f).round(2)} "
+        end
+
+        bot.api.send_message(chat_id: message.chat.id, text: text)
       when /\/top\@Kabanchiki/
         bot.api.send_message(chat_id: message.chat.id, text: Kabanchiki.chat_top(message.chat.id))
       end
