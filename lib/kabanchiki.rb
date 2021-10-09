@@ -1,8 +1,10 @@
 require 'pstore'
 
 class Kabanchiki
+  BET_SIZE = 10.freeze
 
   class << self
+
     def games
       @@chats ||= {}
     end
@@ -11,11 +13,17 @@ class Kabanchiki
       @@store ||= PStore.new("#{__dir__}/kabanchiki_bot.pstore")
     end
 
+    def balance(chat_id, username)
+      store.transaction(true) do
+        store.fetch(chat_id, {}).dig(username, :balance) || (BET_SIZE * 10)
+      end
+    end
+
     def chat_top(chat_id)
       text = "Топ чата: \n\n"
       store.transaction(true) do
-        users = (store[chat_id] || {}).sort_by{|k, v| -v}
-        users.each{|u| text << "#{u.first} : #{u.last}\n"} unless users.empty?
+        users = (store[chat_id] || {}).sort_by{|k, v| -v[:balance]}.first(5)
+        users.each{|u| text << "#{u.first} (#{u.last[:balance]} у.е.)"} unless users.empty?
       end
       text
     end
@@ -32,15 +40,25 @@ class Kabanchiki
     @message_id = nil
   end
 
+  def api(method, **params)
+    begin
+      bot.api.send(method, params)
+    rescue => e
+      bot.logger.error("Telegram error! #{e.message}") unless e.error_code === 400
+    end
+  end
+
   def countdown
-    self.message_id = bot.api.send_message(
+    self.message_id = api(
+      :send_message,
       chat_id: chat_id,
-      text: 'Кто подскочит первым?',
+      text: "Кто подскочит первым?\n(ставка - #{BET_SIZE} у.е.)",
       reply_markup: build_buttons
     ).dig('result', 'message_id')
     3.downto(0).each do |t|
       self.timer = t
-      bot.api.edit_message_reply_markup(
+      api(
+        :edit_message_reply_markup,
         chat_id: chat_id,
         message_id: message_id,
         reply_markup: build_buttons
@@ -52,7 +70,8 @@ class Kabanchiki
 
   def new_bet(username, data, callback_query_id)
     bets[username] = data
-    bot.api.answer_callback_query(
+    api(
+      :answer_callback_query,
       callback_query_id: callback_query_id,
       text: "Кабанчик #{data} выбран!"
     )
@@ -74,7 +93,8 @@ class Kabanchiki
         end
         first_touch = true if (places[kaban] < 2 && !first_touch)
       end
-      bot.api.edit_message_text(
+      api(
+        :edit_message_text,
         chat_id: chat_id,
         message_id: message_id,
         text: render_places(places)
@@ -107,15 +127,21 @@ class Kabanchiki
     bets.each do |user, bet|
       right_bets << user if bet === winner
     end
+    pot, prize = update_balance(right_bets)
 
     unless right_bets.empty?
       result << "\n\n"
+      result << "Cтавок: #{bets.size} Общак: #{pot} у.е.\n"
       result << right_bets.join(', ')
-      result << ' поставил(и) на правильного кабанчика!'
-      update_chat_top(right_bets)
+      if right_bets.size > 1
+        result << ' поставили на правильного кабанчика и получают по '
+      else
+        result << ' поставил на правильного кабанчика и получает '
+      end
+      result << "#{prize} у.е."
     end
 
-    bot.api.edit_message_text(chat_id: chat_id, message_id: message_id, text: result)
+    api(:edit_message_text,chat_id: chat_id, message_id: message_id, text: result)
     Kabanchiki.games[chat_id] = nil
   end
 
@@ -136,16 +162,31 @@ class Kabanchiki
     Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: buttons)
   end
 
-  def update_chat_top(users)
+  def update_balance(winners)
+    pot = bets.size * BET_SIZE
+    prize = winners.empty? ? 0: (pot.to_f / winners.size).round
     store = self.class.store
     store.transaction do
-      new_top = {}
-      old_top =  store[chat_id] || {}
-      users.each do |user|
-        new_top[user] = old_top[user].to_i + 1
+      old_data = store[chat_id] || {}
+      new_data = {}
+
+      bets.each do |user, bet|
+        new_data[user] = {
+          bets: old_data.dig(user, :bets).to_i + 1,
+          right_bets: old_data.dig(user, :right_bets).to_i,
+          balance: (old_data.dig(user, :balance) || (BET_SIZE * 10)) - BET_SIZE
+        }
+
+        if winners.include?(user)
+          new_data[user][:right_bets] += 1
+          new_data[user][:balance] += prize
+        end
       end
-      store[chat_id] = old_top.merge(new_top)
+
+      store[chat_id] = old_data.merge(new_data)
     end
+
+    [pot, prize]
   end
 
 end

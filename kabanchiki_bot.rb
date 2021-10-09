@@ -1,24 +1,17 @@
 require 'telegram/bot'
-require_relative './lib/kabanchiki'
-require_relative './lib/telegram_bot_api_patch'
+require 'logger'
+require_relative 'lib/kabanchiki'
 
-puts "[#{Time.now}] Bot started"
-Telegram::Bot::Client.run(ENV['TOKEN']) do |bot|
+logger = Logger.new('kabanchiki_bot.log', level: :warn)
+Telegram::Bot::Client.run(ENV['TOKEN'], logger: logger) do |bot|
+  bot.logger.warn('Bot started')
   bot.listen do |message|
+
     case message
     when Telegram::Bot::Types::CallbackQuery
-      chat_id = message.message.chat.id
-      game = Kabanchiki.games[chat_id]
-
       if message.data['🐗']
-        if game
-          game.new_bet(message.from.username, message.data, message.id)
-        else
-          bot.api.answer_callback_query(
-            callback_query_id: message.id,
-            text: "Эти кабанчики уже подскочили!"
-          )
-        end
+        game = Kabanchiki.games[message.message.chat.id]
+        game.new_bet(message.from.username, message.data, message.id)
       end
 
     when Telegram::Bot::Types::Message
@@ -30,9 +23,18 @@ Telegram::Bot::Client.run(ENV['TOKEN']) do |bot|
           game = Kabanchiki.new(bot, message.chat.id)
           Thread.start{ game.countdown }
         end
+      when /\/balance\@Kabanchiki/
+        text = "У #{message.from.username} "
+        text << Kabanchiki.balance(message.chat.id, message.from.username).to_s
+        text << ' у.е.'
+        bot.api.send_message(
+          chat_id: message.chat.id,
+          text: text
+        )
       when /\/top\@Kabanchiki/
         bot.api.send_message(chat_id: message.chat.id, text: Kabanchiki.chat_top(message.chat.id))
       end
     end
+
   end
 end
