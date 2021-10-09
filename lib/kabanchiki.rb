@@ -3,6 +3,7 @@ require 'pstore'
 class Kabanchiki
 
   class << self
+
     def games
       @@chats ||= {}
     end
@@ -14,7 +15,7 @@ class Kabanchiki
     def chat_top(chat_id)
       text = "Топ чата: \n\n"
       store.transaction(true) do
-        users = (store[chat_id] || {}).sort_by{|k, v| -v}
+        users = (store[chat_id] || {}).sort_by{|k, v| -v}.first(5)
         users.each{|u| text << "#{u.first} : #{u.last}\n"} unless users.empty?
       end
       text
@@ -32,15 +33,25 @@ class Kabanchiki
     @message_id = nil
   end
 
+  def api(method, **params)
+    begin
+      bot.api.send(method, params)
+    rescue => e
+      bot.logger.error("Telegram error! #{e.message}") unless e.error_code === 400
+    end
+  end
+
   def countdown
-    self.message_id = bot.api.send_message(
+    self.message_id = api(
+      :send_message,
       chat_id: chat_id,
       text: 'Кто подскочит первым?',
       reply_markup: build_buttons
     ).dig('result', 'message_id')
     3.downto(0).each do |t|
       self.timer = t
-      bot.api.edit_message_reply_markup(
+      api(
+        :edit_message_reply_markup,
         chat_id: chat_id,
         message_id: message_id,
         reply_markup: build_buttons
@@ -52,7 +63,8 @@ class Kabanchiki
 
   def new_bet(username, data, callback_query_id)
     bets[username] = data
-    bot.api.answer_callback_query(
+    api(
+      :answer_callback_query,
       callback_query_id: callback_query_id,
       text: "Кабанчик #{data} выбран!"
     )
@@ -74,7 +86,8 @@ class Kabanchiki
         end
         first_touch = true if (places[kaban] < 2 && !first_touch)
       end
-      bot.api.edit_message_text(
+      api(
+        :edit_message_text,
         chat_id: chat_id,
         message_id: message_id,
         text: render_places(places)
@@ -115,7 +128,7 @@ class Kabanchiki
       update_chat_top(right_bets)
     end
 
-    bot.api.edit_message_text(chat_id: chat_id, message_id: message_id, text: result)
+    api(:edit_message_text,chat_id: chat_id, message_id: message_id, text: result)
     Kabanchiki.games[chat_id] = nil
   end
 
