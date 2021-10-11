@@ -26,7 +26,7 @@ Telegram::Bot::Client.run(ENV['TOKEN'], logger: logger) do |bot|
       when /\/stat\@Kabanchiki/
         user = Kabanchiki.user_data(message.chat.id, message.from.username)
         text = "У #{message.from.username} "
-        text << "#{(user[:balance] || Kabanchiki::BET_SIZE*10)} у.е.\n"
+        text << "#{(user[:balance] || Kabanchiki::BET_COST*10)} у.е.\n"
         text << "Ставок: #{user[:bets].to_i}  | "
         text << "Выигрышей: #{user[:right_bets].to_i}"
         if user[:bets].to_i > 0

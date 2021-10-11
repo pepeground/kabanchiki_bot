@@ -1,7 +1,7 @@
 require 'pstore'
 
 class Kabanchiki
-  BET_SIZE = 10.freeze
+  BET_COST = 10.freeze
 
   class << self
 
@@ -56,7 +56,7 @@ class Kabanchiki
     self.message_id = api(
       :send_message,
       chat_id: chat_id,
-      text: "Кто подскочит первым?\n(ставка - #{BET_SIZE} у.е.)",
+      text: "Кто подскочит первым?\n(ставка - #{BET_COST} у.е.)",
       reply_markup: build_buttons
     ).dig('result', 'message_id')
     3.downto(0).each do |t|
@@ -167,7 +167,7 @@ class Kabanchiki
   end
 
   def update_balance(winners)
-    pot = bets.size * BET_SIZE
+    pot = bets.size * BET_COST
     pot += self.class.last_pot[chat_id].to_i
     if winners.empty?
       prize = 0
@@ -186,7 +186,7 @@ class Kabanchiki
         new_data[user] = {
           bets: old_data.dig(user, :bets).to_i + 1,
           right_bets: old_data.dig(user, :right_bets).to_i,
-          balance: (old_data.dig(user, :balance) || (BET_SIZE * 10)) - BET_SIZE
+          balance: (old_data.dig(user, :balance) || (BET_COST * 10)) - BET_COST
         }
 
         if winners.include?(user)
