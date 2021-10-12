@@ -26,7 +26,7 @@ class Kabanchiki
     def chat_top(chat_id)
       text = "Топ 10 чата: \n\n"
       store.transaction(true) do
-        users = (store[chat_id] || {}).sort_by{|k, v| -v[:balance]}.first(10)
+        users = (store.fetch(chat_id, {})).sort_by{|k, v| -v[:balance]}.first(10)
         users.each{|u| text << "#{u.first} (#{u.last[:balance]} у.е.)\n"} unless users.empty?
       end
       text
@@ -111,7 +111,7 @@ class Kabanchiki
   end
 
   def render_places(places)
-    text =  "Погнали!\n"
+    text = "Погнали!\n"
     kabanchiki.each do |kaban|
       text << "|"
       4.times do |t|
@@ -179,7 +179,7 @@ class Kabanchiki
 
     store = self.class.store
     store.transaction do
-      old_data = store[chat_id] || {}
+      old_data = store.fetch(chat_id, {})
       new_data = {}
 
       bets.each do |user, bet|
