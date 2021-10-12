@@ -26,18 +26,15 @@ Telegram::Bot::Client.run(ENV['TOKEN'], logger: logger) do |bot|
       when /\/stat\@Kabanchiki/
         user = Kabanchiki.user_data(message.chat.id, message.from.username)
         text = "У #{message.from.username} "
-        text << "#{(user[:balance] || Kabanchiki::BET_COST*10)} у.е.\n"
+        text << "#{(user[:balance] || Kabanchiki::BET_COST * 10)} у.е.\n"
         text << "Ставок: #{user[:bets].to_i}  | "
         text << "Выигрышей: #{user[:right_bets].to_i}"
-        if user[:bets].to_i > 0
-          text << "\nПроцент: #{(user[:right_bets].to_f/user[:bets].to_f).round(2)} "
-        end
+        text << "\nПроцент: #{(user[:right_bets].to_f / user[:bets].to_f).round(2)} " if user[:bets].to_i.positive?
 
         bot.api.send_message(chat_id: message.chat.id, text: text)
       when /\/top\@Kabanchiki/
         bot.api.send_message(chat_id: message.chat.id, text: Kabanchiki.chat_top(message.chat.id))
       end
     end
-
   end
 end

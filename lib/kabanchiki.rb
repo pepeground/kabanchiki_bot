@@ -4,7 +4,6 @@ class Kabanchiki
   BET_COST = 10.freeze
 
   class << self
-
     def games
       @@games ||= {}
     end
@@ -123,7 +122,7 @@ class Kabanchiki
   end
 
   def award(places)
-    winner = places.sort_by{|k, v| v}.first.first
+    winner = places.min_by { |_k, v| v }.first
     result = render_places(places)
     result << "\nКабанчик #{winner} подскочил первым!"
 
@@ -145,14 +144,14 @@ class Kabanchiki
       result << "#{prize} у.е."
     end
 
-    api(:edit_message_text,chat_id: chat_id, message_id: message_id, text: result)
+    api(:edit_message_text, chat_id: chat_id, message_id: message_id, text: result)
     Kabanchiki.games[chat_id] = nil
   end
 
   def build_buttons
     buttons = []
     kabanchiki.each do |kaban|
-      text = bets.size > 0 ? "#{kaban} (#{bets.values.count(kaban)})" : kaban
+      text = bets.size.positive? ? "#{kaban} (#{bets.values.count(kaban)})" : kaban
       buttons << Telegram::Bot::Types::InlineKeyboardButton.new(
         text: text,
         callback_data: kaban
