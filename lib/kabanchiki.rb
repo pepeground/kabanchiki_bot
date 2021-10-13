@@ -33,7 +33,7 @@ class Kabanchiki
     end
   end
 
-  attr_accessor :bot, :chat_id, :bets, :kabanchiki, :started_at, :message_id, :timer
+  attr_accessor :bot, :chat_id, :bets, :kabanchiki, :message_id, :timer
 
   def initialize(bot, chat_id)
     @bot = bot
