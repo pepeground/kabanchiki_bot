@@ -52,10 +52,17 @@ class Kabanchiki
   end
 
   def countdown
+    text_message = "Кто подскочит первым?\n(ставка - #{BET_COST} у.е.)"
+    
+    pot = bets.size * BET_COST + self.class.last_pot[chat_id].to_i
+    if pot > 0
+      text_message << "\n\nОбщак: #{pot}"
+    end
+    
     self.message_id = api(
       :send_message,
       chat_id: chat_id,
-      text: "Кто подскочит первым?\n(ставка - #{BET_COST} у.е.)",
+      text: text_message,
       reply_markup: build_buttons
     ).dig('result', 'message_id')
     3.downto(0).each do |t|
