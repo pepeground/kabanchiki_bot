@@ -44,11 +44,7 @@ class Kabanchiki
   end
 
   def api(method, **params)
-    begin
-      bot.api.send(method, params)
-    rescue => e
-      bot.logger.error("Telegram error! #{e.message}") unless e.error_code === 400
-    end
+    bot.api.send(method, params)
   end
 
   def countdown

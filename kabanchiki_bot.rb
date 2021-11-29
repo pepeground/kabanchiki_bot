@@ -1,9 +1,8 @@
 require 'telegram/bot'
-require 'logger'
+require_relative './lib/telegram_bot_api_patch'
 require_relative 'lib/kabanchiki'
 
-logger = Logger.new('kabanchiki_bot.log', level: :warn)
-Telegram::Bot::Client.run(ENV['TOKEN'], logger: logger) do |bot|
+Telegram::Bot::Client.run(ENV['TOKEN']) do |bot|
   bot.logger.warn('Bot started')
   bot.listen do |message|
 
