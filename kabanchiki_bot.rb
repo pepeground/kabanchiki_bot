@@ -3,7 +3,6 @@ require_relative './lib/telegram_bot_api_patch'
 require_relative 'lib/kabanchiki'
 
 Telegram::Bot::Client.run(ENV['TOKEN']) do |bot|
-  bot.logger.warn('Bot started')
   bot.listen do |message|
 
     case message
